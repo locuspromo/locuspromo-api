@@ -5,6 +5,7 @@ import requests
 
 app = FastAPI()
 
+# Enable CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,30 +14,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SOUNDCLOUD_CLIENT_ID = "w1OB6ERQK3sAH8CY"  # Public Client ID
+# Jamendo API key (replace with your own)
+JAMENDO_CLIENT_ID = "YOUR_JAMENDO_CLIENT_ID"
 
 @app.get("/recommend")
-def recommend(mood: str = "lofi"):
+def recommend(mood: str = "chill"):
     try:
-        url = "https://api-v2.soundcloud.com/search/tracks"
+        url = "https://api.jamendo.com/v3.0/tracks"
         params = {
-            "q": mood,
-            "client_id": SOUNDCLOUD_CLIENT_ID,
-            "limit": 10
+            "client_id": JAMENDO_CLIENT_ID,
+            "format": "json",
+            "limit": 10,
+            "tags": mood,
+            "fuzzytags": "1",
+            "audioformat": "mp31",
+            "include": "musicinfo",
+            "groupby": "artist_id",
+            "order": "popularity_total"
         }
+
         res = requests.get(url, params=params)
         res.raise_for_status()
-        tracks = res.json().get("collection", [])
+        tracks = res.json().get("results", [])
 
         return [
             {
-                "title": t.get("title"),
-                "artist": t.get("user", {}).get("username"),
-                "url": t.get("permalink_url"),
-                "artwork": t.get("artwork_url")
+                "title": t.get("name"),
+                "artist": t.get("artist_name"),
+                "url": t.get("audio"),
+                "album": t.get("album_name"),
+                "image": t.get("album_image")
             }
             for t in tracks
         ]
+
     except Exception as e:
         print("ERROR:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
