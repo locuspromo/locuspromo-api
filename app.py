@@ -21,7 +21,7 @@ def recommend(mood: str = "lofi"):
         res = requests.get(f"{AUDIUS_API}/tracks/trending", params={"app_name": "locuspromo"})
         res.raise_for_status()
         tracks = res.json().get("data", [])
-        filtered = [t for t in tracks if mood.lower() in t["title"].lower()]
+        filtered = tracks[:10]
         return [{"title": t["title"], "artist": t["user"]["name"], "url": t["permalink"]} for t in filtered[:10]]
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
